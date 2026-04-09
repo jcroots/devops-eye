@@ -36,6 +36,10 @@ func New(dir string) (*Module, error) {
 	if err != nil {
 		return nil, fmt.Errorf("scripts: resolve dir: %w", err)
 	}
+	absDir, err = filepath.EvalSymlinks(absDir)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("scripts: resolve dir symlinks: %w", err)
+	}
 	m := &Module{dir: absDir}
 	m.scripts, err = discover(absDir)
 	if err != nil {
@@ -132,7 +136,15 @@ func (m *Module) run(w http.ResponseWriter, name string) {
 }
 
 func discover(dir string) ([]Script, error) {
-	entries, err := os.ReadDir(dir)
+	// Resolve symlinks on dir so isInsideDir checks are consistent.
+	realDir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	entries, err := os.ReadDir(realDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -146,7 +158,7 @@ func discover(dir string) ([]Script, error) {
 			continue
 		}
 		// Use Lstat to avoid following symlinks.
-		fullPath := filepath.Join(dir, entry.Name())
+		fullPath := filepath.Join(realDir, entry.Name())
 		info, err := os.Lstat(fullPath)
 		if err != nil {
 			continue
@@ -167,7 +179,7 @@ func discover(dir string) ([]Script, error) {
 		if err != nil {
 			continue
 		}
-		if !isInsideDir(resolved, dir) {
+		if !isInsideDir(resolved, realDir) {
 			continue
 		}
 		scripts = append(scripts, Script{
