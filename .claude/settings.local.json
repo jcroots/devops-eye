@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go version:*)",
+      "Bash(make build:*)",
+      "Bash(./devops-eye)",
+      "Bash(go test:*)",
+      "Bash(make test:*)",
+      "Bash(make lint:*)",
+      "Bash(make clean:*)"
+    ]
+  }
+}

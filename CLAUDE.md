@@ -24,22 +24,22 @@ server.
 ```
 cmd/devops-eye/       # main entrypoint
 internal/
-  server/             # HTTP server setup, routing, middleware
+  server/             # HTTP server setup, routing, module registry
   modules/            # built-in diagnostic modules
     hostinfo/         # hostname, OS, kernel, uptime, container detection
     netinfo/          # interfaces, IPs, routes, DNS, connectivity checks
     ...               # future modules
   scripts/            # script runner: discovery, validation, execution
   render/             # HTML rendering/templating utilities
-config/               # configuration loading (CLI flags, env vars, config file)
+config/               # configuration loading (CLI flags, env vars)
 scripts.d/            # default well-known directory for user scripts
 ```
 
 ### HTTP Server
 
 - Uses Go standard library `net/http` (no external frameworks).
-- Configurable listen address/port via CLI flags, environment variables, or
-  config file (in that precedence order).
+- Configurable listen address/port via CLI flags or environment variables
+  (flags take precedence over env vars, env vars over defaults).
 - Each module registers its own HTTP handler(s) under a path prefix.
 - The index page (`/`) lists all available modules and scripts with links.
 
@@ -51,11 +51,11 @@ Each module is a self-contained package that:
 2. Returns structured data that the render layer turns into HTML.
 3. Registers its routes with the server at startup.
 
-Modules planned for the initial version:
+Current modules:
 - **hostinfo**: hostname, OS/distro, kernel version, uptime, CPU/memory summary,
-  container runtime detection (Docker, Podman, systemd-nspawn, etc.).
+  container runtime detection (Docker, Podman, Kubernetes, LXC).
 - **netinfo**: network interfaces, IP addresses, routing table, DNS resolvers,
-  listening ports, basic connectivity checks.
+  listening ports (TCP/TCP6).
 
 ### Script Runner
 
@@ -88,8 +88,16 @@ Modules planned for the initial version:
   global state. Pass dependencies explicitly.
 - **Error handling**: return errors, don't panic. Log errors with context.
 - **Testing**: table-driven tests using the standard `testing` package.
-- **Configuration precedence**: CLI flags > environment variables > config file
-  > defaults.
+- **Copyright header**: all `.go` files must start with the copyright header:
+  `// Copyright (c) Jeremías Casteglione <jeremias.rootstrap@gmail.com>`
+  followed by `// See LICENSE file.`
+- **Configuration precedence**: CLI flags > environment variables > defaults.
+
+## Maintaining This File
+
+Keep CLAUDE.md up to date whenever changes affect the project's architecture,
+conventions, modules, configuration, or any other aspect documented here. Update
+proactively — don't wait to be asked.
 
 ## Security Considerations
 
